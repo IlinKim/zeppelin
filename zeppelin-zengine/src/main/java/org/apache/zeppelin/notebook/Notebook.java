@@ -234,7 +234,7 @@ public class Notebook implements NoteEventListener {
 
     Note sourceNote = getNote(sourceNoteID);
     if (sourceNote == null) {
-      throw new IllegalArgumentException(sourceNoteID + "not found");
+      throw new IllegalArgumentException(sourceNoteID + " not found");
     }
     Note newNote = createNote(subject);
     if (newNoteName != null) {
