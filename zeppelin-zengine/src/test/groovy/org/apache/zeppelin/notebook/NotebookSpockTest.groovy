@@ -47,15 +47,15 @@ class NotebookSpockTest extends Specification {
     where:
     DESC                                | AUTO_INTERPRETER_BINDING | INTERPRETER_SETTING_LIST | BINDING_INTERPRETERS_NUM | RESULT
     "AUTO_INTERPRETER_BINDING == false" | false                    | null                     | 0                        | 1
-    "AUTO_INTERPRETER_BINDING == true"  | true                     | ["interpreterId_TEST"]   | 1                        | 1
+    "AUTO_INTERPRETER_BINDING == true"  | true                     | ["interpreter1"]         | 1                        | 1
   }
 
   def "exportNote : if note is exist"() {
     given:
-    notebook.notes.put("id_TEST", new Note())
+    notebook.notes.put("note1", new Note())
 
     when:
-    notebook.exportNote("id_TEST")
+    notebook.exportNote("note1")
 
     then:
     noExceptionThrown()
@@ -63,18 +63,18 @@ class NotebookSpockTest extends Specification {
 
   def "exportNote : if note is not exist"() {
     when:
-    notebook.exportNote("id_TEST")
+    notebook.exportNote("note1")
 
     then:
     def e = thrown(IllegalArgumentException)
-    e.getMessage() == "id_TEST not found"
+    e.getMessage() == "note1 not found"
   }
 
   @Unroll
   def "importNote : #DESC"() {
     given:
     Note note = notebook.createNote(new AuthenticationInfo())
-    note.setName("oldNoteName_TEST")
+    note.setName("oldNoteName")
 
     if (EXIST_PARAGRAPH) {
       note.addParagraph()
@@ -90,23 +90,23 @@ class NotebookSpockTest extends Specification {
     result.getParagraphs().size() == RESULT_PARAGRAPHS_SIZE //validate if the old note's paragraph is copied to new note
 
     where:
-    DESC                       | NEW_NOTE_NAME      | RESULT_NOTE_NAME   | EXIST_PARAGRAPH | RESULT_PARAGRAPHS_SIZE
-    "if new noteName is null"  | null               | "oldNoteName_TEST" | false           | 0
-    "if new noteName is exist" | "newNoteName_TEST" | "newNoteName_TEST" | false           | 0
-    "if paragraph is exist"    | "newNoteName_TEST" | "newNoteName_TEST" | true            | 1
+    DESC                       | NEW_NOTE_NAME | RESULT_NOTE_NAME | EXIST_PARAGRAPH | RESULT_PARAGRAPHS_SIZE
+    "if new noteName is null"  | null          | "oldNoteName"    | false           | 0
+    "if new noteName is exist" | "newNoteName" | "newNoteName"    | false           | 0
+    "if paragraph is exist"    | "newNoteName" | "newNoteName"    | true            | 1
   }
 
   @Unroll
   def "cloneNote : #DESC"() {
     given:
     Note sourceNote = new Note()
-    sourceNote.setName("sourceNoteName_TEST")
+    sourceNote.setName("sourceNoteName")
 
     if (EXIST_PARAGRAPH) {
       sourceNote.addParagraph()
     }
 
-    notebook.notes.put("sourceNoteName_TEST", sourceNote)
+    notebook.notes.put("sourceNoteName", sourceNote)
 
     replFactory.getInterpreters(_) >> []
     replFactory.getInterpreterSettings(_) >> []
@@ -119,25 +119,25 @@ class NotebookSpockTest extends Specification {
     result.getParagraphs().size() == RESULT_PARAGRAPHS_SIZE
 
     where:
-    DESC                       | SOURCE_NOTE_ID        | NEW_NOTE_NAME | RESULT_NOTE_NAME | EXIST_PARAGRAPH | RESULT_PARAGRAPHS_SIZE
-    "if new noteName is null"  | "sourceNoteName_TEST" | null          | ""               | false           | 0
-    "if new noteName is exist" | "sourceNoteName_TEST" | "newNoteName" | "newNoteName"    | false           | 0
-    "if paragraph is exist"    | "sourceNoteName_TEST" | "newNoteName" | "newNoteName"    | true            | 1
+    DESC                       | SOURCE_NOTE_ID   | NEW_NOTE_NAME | RESULT_NOTE_NAME | EXIST_PARAGRAPH | RESULT_PARAGRAPHS_SIZE
+    "if new noteName is null"  | "sourceNoteName" | null          | ""               | false           | 0
+    "if new noteName is exist" | "sourceNoteName" | "newNoteName" | "newNoteName"    | false           | 0
+    "if paragraph is exist"    | "sourceNoteName" | "newNoteName" | "newNoteName"    | true            | 1
   }
 
   def "cloneNote : if sourceNote is not exist"() {
     when:
-    notebook.cloneNote("TEST", "newNoteName", new AuthenticationInfo())
+    notebook.cloneNote("sourceNote1", "newNoteName", new AuthenticationInfo())
 
     then:
     def e = thrown(IllegalArgumentException)
-    e.getMessage() == "TEST not found"
+    e.getMessage() == "sourceNote1 not found"
   }
 
   @Unroll
-  def "bindInterpretersToNote"() {
+  def "bindInterpretersToNote : #DESC"() {
     given:
-    notebook.notes.put("id_TEST", new Note())
+    notebook.notes.put("note1", new Note())
 
     replFactory.getInterpreterSettings(_) >> CURRENT_BINDINGS
 
@@ -149,12 +149,49 @@ class NotebookSpockTest extends Specification {
 
 
     where:
-    DESC                                                      | NOTE_ID    | INTERPRETER_SETTING_IDS | CURRENT_BINDINGS                                    | BINDING_INTERPRETERS_NUM
-    "if note is not exist"                                    | "wrong_Id" | null                    | null                                                | 0
-    "if note is exist"                                        | "id_TEST"  | []                      | []                                                  | 1
-    "if INTERPRETER_SETTING_IDS not contains currentBindings" | "id_TEST"  | ["interpreterSetting1"] | [new InterpreterSetting(id: "interpreterSetting2")] | 1
-    "if INTERPRETER_SETTING_IDS contains currentBindings"     | "id_TEST"  | ["interpreterSetting1"] | [new InterpreterSetting(id: "interpreterSetting1")] | 1
+    DESC                                                      | NOTE_ID | INTERPRETER_SETTING_IDS | CURRENT_BINDINGS                                    | BINDING_INTERPRETERS_NUM
+    "if note is not exist"                                    | "note2" | null                    | null                                                | 0
+    "if note is exist"                                        | "note1" | []                      | []                                                  | 1
+    "if INTERPRETER_SETTING_IDS not contains currentBindings" | "note1" | ["interpreterSetting1"] | [new InterpreterSetting(id: "interpreterSetting2")] | 1
+    "if INTERPRETER_SETTING_IDS contains currentBindings"     | "note1" | ["interpreterSetting1"] | [new InterpreterSetting(id: "interpreterSetting1")] | 1
   }
 
+  @Unroll
+  def "getBindedInterpreterSettingsIds"() {
+    given:
+    notebook.notes.put("note1", new Note())
+    replFactory.getInterpreters(_) >> ["interpreter1"]
+
+    when:
+    def result = notebook.getBindedInterpreterSettingsIds(NOTE_ID)
+
+    then:
+    result == RESULT
+
+    where:
+    DESC                   | NOTE_ID | RESULT
+    "if note is exist"     | "note1" | ["interpreter1"]
+    "if note is not exist" | "note2" | []
+  }
+
+  @Unroll
+  def "getBindedInterpreterSettings"() {
+    given:
+    notebook.notes.put("note1", new Note())
+    replFactory.getInterpreterSettings(_) >> [new InterpreterSetting()]
+
+    when:
+    def result = notebook.getBindedInterpreterSettings(NOTE_ID)
+
+    then:
+    result.size() == RESULT
+
+    where:
+    DESC                   | NOTE_ID | RESULT
+    "if note is exist"     | "note1" | 1
+    "if note is not exist" | "note2" | 0
+  }
+
+  
 
 }
